@@ -9,10 +9,6 @@ Route::livewire('/', 'pages::dashboard')
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
-Route::livewire('/playground', 'pages::playground')
-    ->middleware(['auth', 'verified'])
-    ->name('playground');
-
 // Auth routes
 Route::middleware('guest')->group(function () {
     Route::livewire('/auth/login', 'pages::auth.login')->name('login');

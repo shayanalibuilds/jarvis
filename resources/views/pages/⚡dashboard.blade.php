@@ -14,8 +14,7 @@ new #[Layout('layouts::app')] class extends Component {
         <div>
             <flux:heading size="lg">Welcome to your new dashboard</flux:heading>
             <flux:subheading>
-                Let's get started in the
-                <flux:link href="/playground">playground.</flux:link>
+                Let's get started.
             </flux:subheading>
         </div>
     </flux:card>
