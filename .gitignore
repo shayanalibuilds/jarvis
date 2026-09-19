@@ -46,3 +46,5 @@ bun-debug.log
 .windsurf/
 .zencoder/
 skills/
+
+.php-cs-fixer*
