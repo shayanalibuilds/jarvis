@@ -1,0 +1,17 @@
+<?php
+
+declare(strict_types=1);
+
+use function Pest\Laravel\get;
+
+test('dashboard page requires authentication', function (): void {
+    get('/')->assertRedirect(route('login'));
+});
+
+test('verified middleware is applied to dashboard', function (): void {
+    // This test verifies the middleware is present in routes
+    $route = app('router')->getRoutes()->getByName('dashboard');
+
+    expect($route)->not->toBeNull()
+        ->and($route->middleware())->toContain('verified');
+});

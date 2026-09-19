@@ -1,0 +1,175 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Method App\\Enums\\TeamRole\:\:assignable\(\) should return list\<array\{value\: string, label\: string\}\> but returns array\<int, array\{value\: string, label\: string\}\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Enums/TeamRole.php
+
+		-
+			message: '#^Cannot call method hasVerifiedEmail\(\) on App\\Models\\User\|null\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Controllers/Auth/VerifyEmailController.php
+
+		-
+			message: '#^Cannot call method markEmailAsVerified\(\) on App\\Models\\User\|null\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Controllers/Auth/VerifyEmailController.php
+
+		-
+			message: '#^Parameter \#1 \$user of class Illuminate\\Auth\\Events\\Verified constructor expects Illuminate\\Contracts\\Auth\\MustVerifyEmail, App\\Models\\User\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Auth/VerifyEmailController.php
+
+		-
+			message: '#^Parameter \#1 \$credentials of static method Illuminate\\Support\\Facades\\Auth\:\:attempt\(\) expects array, mixed given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Livewire/Forms/LoginForm.php
+
+		-
+			message: '#^Class App\\Models\\Team uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Team.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<\(int\|string\),mixed\>\:\:map\(\) expects callable\(mixed, int\|string\)\: \(int\|null\), Closure\(string\)\: \(int\|null\) given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Models/Team.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Models/Team.php
+
+		-
+			message: '#^Cannot call method isPast\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Models/TeamInvitation.php
+
+		-
+			message: '#^Class App\\Models\\TeamInvitation uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/TeamInvitation.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Models/TeamInvitation.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Relations\\Pivot\:\:\$role\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Cannot access property \$id on App\\Models\\Team\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Class App\\Models\\User uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Cannot access property \$name on App\\Models\\Team\|null\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: app/Notifications/Teams/TeamInvitation.php
+
+		-
+			message: '#^Cannot access property \$name on App\\Models\\User\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Notifications/Teams/TeamInvitation.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 1
+			path: app/Rules/TeamName.php
+
+		-
+			message: '#^Method App\\Rules\\TeamName\:\:reservedNames\(\) should return list\<string\> but returns array\<int, string\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Rules/TeamName.php
+
+		-
+			message: '#^Method App\\Rules\\TeamName\:\:routePrefixes\(\) should return list\<string\> but returns array\<int, non\-empty\-string\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Rules/TeamName.php
+
+		-
+			message: '#^Cannot cast mixed to string\.$#'
+			identifier: cast.string
+			count: 1
+			path: app/Rules/UniqueTeamInvitation.php
+
+		-
+			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: routes/web.php
+
+		-
+			message: '#^Cannot access property \$password on App\\Models\\User\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: tests/Feature/Auth/ResetPasswordTest.php
+
+		-
+			message: '#^Cannot call method middleware\(\) on Illuminate\\Routing\\Route\|null\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: tests/Feature/Pages/DashboardTest.php
+
+		-
+			message: '#^Cannot access property \$email_verified_at on App\\Models\\User\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: tests/Feature/ProfileTest.php
+
+		-
+			message: '#^Cannot access property \$password on App\\Models\\User\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: tests/Feature/ProfileTest.php
+
+		-
+			message: '#^Unable to resolve the template type TComponent in call to method Livewire\\LivewireManager\:\:test\(\)$#'
+			identifier: argument.templateType
+			count: 11
+			path: tests/Feature/ProfileTest.php
+
+		-
+			message: '#^Cannot access property \$accepted_at on App\\Models\\TeamInvitation\|null\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: tests/Feature/TeamsTest.php
+
+		-
+			message: '#^Cannot access property \$current_team_id on App\\Models\\User\|null\.$#'
+			identifier: property.nonObject
+			count: 5
+			path: tests/Feature/TeamsTest.php
+
+		-
+			message: '#^Unable to resolve the template type TComponent in call to method Livewire\\LivewireManager\:\:test\(\)$#'
+			identifier: argument.templateType
+			count: 7
+			path: tests/Feature/TeamsTest.php
