@@ -1,0 +1,24 @@
+[package]
+name = "shayanalibuilds/jarvis"
+version = "0.1.0"
+description = "Jarvis application for Pakistani vibe coders, and some other peoples like teachers, students etc..."
+license = "MIT"
+readme = "./README.md"
+repository = "https://github.com/shayanalibuilds/jarvis"
+entrypoint = "run"
+
+[dependencies]
+"php/php" = "^8.3"
+
+[fs]
+"/app/" = "."
+"/php-config" = "wasmer"
+
+[[command]]
+name = "run"
+module = "php/php:php"
+runner = "wasi"
+
+[command.annotations.wasi]
+main-args = ["-t", "/app/public", "-S", "localhost:8080"]
+env = ["PHPRC=/php-config/"]

@@ -1,0 +1,23 @@
+kind: wasmer.io/App.v0
+owner: shayanalibuilds
+name: jarvis
+package: .
+debug: false
+
+env:
+    APP_ENV: production
+    APP_DEBUG: 'false'
+    APP_NAME: 'Jarvis'
+    APP_TIMEZONE: Asia/Karachi
+    LOG_CHANNEL: stderr
+    LOG_LEVEL: error
+    SESSION_DRIVER: cookie
+    CACHE_STORE: file
+    QUEUE_CONNECTION: sync
+    FILESYSTEM_DISK: local
+
+capabilities:
+    instaboot:
+        requests:
+            - path: /
+            - path: /dashboard/login
