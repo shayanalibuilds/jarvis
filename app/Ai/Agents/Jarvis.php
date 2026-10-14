@@ -12,6 +12,7 @@ use App\Ai\Tools\RunConnectionTool;
 use App\Ai\Tools\RunShellCommand;
 use App\Ai\Tools\WriteFile;
 use App\Models\JarvisSession;
+use Illuminate\Support\Facades\Config;
 use Laravel\Ai\Concerns\RemembersConversations;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\Conversational;
@@ -62,7 +63,7 @@ final class Jarvis implements Agent, Conversational, HasTools
      */
     public function maxSteps(): int
     {
-        return max(1, (int) config('jarvis.agent.max_steps', 25));
+        return max(1, Config::integer('jarvis.agent.max_steps', 25));
     }
 
     /**

@@ -12,32 +12,28 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Override;
 
+/**
+ * @property JarvisToolCallStatus $status
+ * @property string $session_id
+ * @property string $user_id
+ * @property string|null $device_id
+ * @property string $tool
+ * @property string $target
+ * @property array<string, mixed>|null $arguments
+ * @property string|null $result
+ * @property string|null $error
+ */
 final class JarvisToolCall extends Model
 {
+    /** @use HasFactory<\Database\Factories\JarvisToolCallFactory> */
     use HasFactory;
+
     use HasUuids;
 
     /**
      * @var list<string>
      */
     protected $guarded = [];
-
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    #[Override]
-    protected function casts(): array
-    {
-        return [
-            'id' => 'string',
-            'status' => JarvisToolCallStatus::class,
-            'arguments' => 'array',
-            'claimed_at' => 'datetime',
-            'completed_at' => 'datetime',
-        ];
-    }
 
     /**
      * Get the session the tool call belongs to.
@@ -77,5 +73,22 @@ final class JarvisToolCall extends Model
     public function scopePending(Builder $query): void
     {
         $query->where('status', JarvisToolCallStatus::Pending);
+    }
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    #[Override]
+    protected function casts(): array
+    {
+        return [
+            'id' => 'string',
+            'status' => JarvisToolCallStatus::class,
+            'arguments' => 'array',
+            'claimed_at' => 'datetime',
+            'completed_at' => 'datetime',
+        ];
     }
 }

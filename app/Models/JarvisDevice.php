@@ -9,32 +9,28 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Config;
 use Override;
 
+/**
+ * @property string $user_id
+ * @property string $name
+ * @property string $platform
+ * @property string $token
+ * @property array<string, mixed>|null $meta
+ * @property \Illuminate\Support\Carbon|null $last_seen_at
+ */
 final class JarvisDevice extends Model
 {
+    /** @use HasFactory<\Database\Factories\JarvisDeviceFactory> */
     use HasFactory;
+
     use HasUuids;
 
     /**
      * @var list<string>
      */
     protected $guarded = [];
-
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    #[Override]
-    protected function casts(): array
-    {
-        return [
-            'id' => 'string',
-            'meta' => 'array',
-            'last_seen_at' => 'datetime',
-        ];
-    }
 
     /**
      * Get the user that owns the device.
@@ -61,8 +57,23 @@ final class JarvisDevice extends Model
      */
     public function isOnline(): bool
     {
-        $ttl = (int) config('jarvis.devices.heartbeat_ttl', 60);
+        $ttl = Config::integer('jarvis.devices.heartbeat_ttl', 60);
 
         return $this->last_seen_at !== null && $this->last_seen_at->gt(now()->subSeconds($ttl));
+    }
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    #[Override]
+    protected function casts(): array
+    {
+        return [
+            'id' => 'string',
+            'meta' => 'array',
+            'last_seen_at' => 'datetime',
+        ];
     }
 }

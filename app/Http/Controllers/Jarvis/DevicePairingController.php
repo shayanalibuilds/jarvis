@@ -20,16 +20,20 @@ final class DevicePairingController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $validated = $request->validate([
+        $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'platform' => ['nullable', 'string', 'max:32'],
         ]);
 
+        $user = $request->user();
+
+        abort_if($user === null, 401, 'You must be signed in to pair a device.');
+
         /** @var JarvisDevice $device */
         $device = JarvisDevice::query()->create([
-            'user_id' => $request->user()->getKey(),
-            'name' => $validated['name'],
-            'platform' => $validated['platform'] ?? 'unknown',
+            'user_id' => $user->getKey(),
+            'name' => $request->string('name')->value(),
+            'platform' => $request->string('platform')->value() ?: 'unknown',
             'token' => Str::random(64),
             'last_seen_at' => now(),
         ]);

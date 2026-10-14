@@ -11,31 +11,27 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Override;
 
+/**
+ * @property JarvisConnectionStatus $status
+ * @property string $user_id
+ * @property string $toolkit
+ * @property string|null $name
+ * @property string|null $auth_config_id
+ * @property string|null $connected_account_id
+ * @property array<string, mixed>|null $meta
+ * @property \Illuminate\Support\Carbon|null $connected_at
+ */
 final class JarvisConnection extends Model
 {
+    /** @use HasFactory<\Database\Factories\JarvisConnectionFactory> */
     use HasFactory;
+
     use HasUuids;
 
     /**
      * @var list<string>
      */
     protected $guarded = [];
-
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    #[Override]
-    protected function casts(): array
-    {
-        return [
-            'id' => 'string',
-            'status' => JarvisConnectionStatus::class,
-            'meta' => 'array',
-            'connected_at' => 'datetime',
-        ];
-    }
 
     /**
      * Get the user that owns the connection.
@@ -61,5 +57,21 @@ final class JarvisConnection extends Model
     public function displayName(): string
     {
         return $this->name ?? $this->toolkit;
+    }
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    #[Override]
+    protected function casts(): array
+    {
+        return [
+            'id' => 'string',
+            'status' => JarvisConnectionStatus::class,
+            'meta' => 'array',
+            'connected_at' => 'datetime',
+        ];
     }
 }

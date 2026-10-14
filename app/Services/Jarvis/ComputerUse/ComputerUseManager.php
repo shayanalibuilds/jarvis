@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Services\Jarvis\ComputerUse;
 
 use App\Exceptions\Jarvis\ComputerUseException;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Str;
 
 /**
  * Resolves the computer use driver for the current machine and stores screenshots.
@@ -22,11 +24,11 @@ final class ComputerUseManager
             return $this->driver;
         }
 
-        if (! (bool) config('jarvis.computer_use.enabled', true)) {
+        if (! Config::boolean('jarvis.computer_use.enabled', true)) {
             return new NullComputerUseDriver;
         }
 
-        $configured = (string) config('jarvis.computer_use.driver', 'auto');
+        $configured = Config::string('jarvis.computer_use.driver', 'auto');
 
         if ($configured !== 'auto') {
             return $this->driverNamed($configured);
@@ -54,7 +56,7 @@ final class ComputerUseManager
             throw ComputerUseException::unsupported('screenshot', $driver->name());
         }
 
-        $relativePath = mb_trim($directory, '/').'/'.now()->format('Ymd-His').'-'.mb_substr((string) str()->uuid(), 0, 8).'.png';
+        $relativePath = mb_trim($directory, '/').'/'.now()->format('Ymd-His').'-'.mb_substr((string) Str::uuid(), 0, 8).'.png';
         $absolutePath = storage_path('app/'.$relativePath);
 
         if (! is_dir(dirname($absolutePath))) {

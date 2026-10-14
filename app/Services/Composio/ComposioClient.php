@@ -10,6 +10,7 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 use Throwable;
 
@@ -31,9 +32,10 @@ final class ComposioClient
     public function __construct()
     {
         $key = config('jarvis.composio.key');
+
         $this->apiKey = is_string($key) && $key !== '' ? $key : null;
-        $this->baseUrl = mb_rtrim((string) config('jarvis.composio.base_url'), '/');
-        $this->timeout = (int) config('jarvis.composio.timeout', 30);
+        $this->baseUrl = mb_rtrim(Config::string('jarvis.composio.base_url', 'https://backend.composio.dev/api/v3'), '/');
+        $this->timeout = Config::integer('jarvis.composio.timeout', 30);
     }
 
     /**
@@ -98,7 +100,7 @@ final class ComposioClient
      */
     public function authConfigId(string $toolkit): string
     {
-        $ttl = (int) config('jarvis.composio.toolkit_cache_ttl', 3600);
+        $ttl = Config::integer('jarvis.composio.toolkit_cache_ttl', 3600);
 
         return Cache::remember(
             "jarvis.composio.auth_config.{$toolkit}",
@@ -159,6 +161,9 @@ final class ComposioClient
      *
      * @param  list<string>|null  $toolkits
      * @return list<array{id: string|null, toolkit: string|null, status: string|null, alias: string|null}>
+     *
+     * @throws ComposioException
+     * @throws ConnectionException
      */
     public function connectedAccounts(User $user, ?array $toolkits = null): array
     {
@@ -190,7 +195,7 @@ final class ComposioClient
     {
         try {
             return $this->connectedAccounts($user);
-        } catch (ConnectionException|ComposioException|Throwable) {
+        } catch (Throwable) {
             return [];
         }
     }
@@ -212,20 +217,27 @@ final class ComposioClient
         /** @var list<array<string, mixed>> $items */
         $items = $response->json('items') ?? [];
 
-        return array_values(array_filter(array_map(function (array $item): ?array {
+        $tools = [];
+
+        foreach ($items as $item) {
             $slug = $item['slug'] ?? null;
 
             if (! is_string($slug) || $slug === '') {
-                return null;
+                continue;
             }
 
-            return [
+            /** @var array<string, mixed> $parameters */
+            $parameters = is_array($item['input_parameters'] ?? null) ? $item['input_parameters'] : [];
+
+            $tools[] = [
                 'slug' => $slug,
                 'name' => is_string($item['name'] ?? null) ? $item['name'] : $slug,
                 'description' => is_string($item['description'] ?? null) ? $item['description'] : '',
-                'parameters' => is_array($item['input_parameters'] ?? null) ? $item['input_parameters'] : [],
+                'parameters' => $parameters,
             ];
-        }, $items)));
+        }
+
+        return $tools;
     }
 
     /**
@@ -271,7 +283,9 @@ final class ComposioClient
      */
     public function userId(User $user): string
     {
-        return (string) $user->getKey();
+        $key = $user->getKey();
+
+        return is_scalar($key) ? (string) $key : '';
     }
 
     /**
@@ -284,7 +298,7 @@ final class ComposioClient
         }
 
         return Http::baseUrl($this->baseUrl)
-            ->withHeaders(['x-api-key' => (string) $this->apiKey])
+            ->withHeaders(['x-api-key' => $this->apiKey ?? ''])
             ->acceptJson()
             ->asJson()
             ->timeout($this->timeout);

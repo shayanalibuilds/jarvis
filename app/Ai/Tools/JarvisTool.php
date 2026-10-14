@@ -7,6 +7,7 @@ namespace App\Ai\Tools;
 use App\Exceptions\Jarvis\JarvisInterruptedException;
 use App\Models\JarvisSession;
 use App\Models\User;
+use Illuminate\Support\Facades\Config;
 use Laravel\Ai\Approvals\Approval;
 use Laravel\Ai\Concerns\InteractsWithApprovals;
 use Laravel\Ai\Contracts\Approvable;
@@ -31,7 +32,7 @@ abstract class JarvisTool implements Approvable, Tool
      */
     protected function needsApproval(Request $request): Approval|bool
     {
-        return (bool) config('jarvis.control.require_approval', true);
+        return Config::boolean('jarvis.control.require_approval', true);
     }
 
     /**

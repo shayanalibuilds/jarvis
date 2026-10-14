@@ -142,6 +142,97 @@ If you use [AI coding assistants](https://skills.sh) with this project, these sk
 | **Playwriter** — Control your actual Chrome browser from AI agents (requires [Chrome extension](https://playwriter.dev)) | Included in `.agents/skills/` · CLI: `npm i -g playwriter` |
 | **Expect CLI** — Adversarial browser testing for code changes (requires `npm i -g expect-cli`) | Included in `.agents/skills/` · Init: `npx -y expect-cli@latest init` |
 
+## Jarvis
+
+Jarvis is an agent that operates your computer and the products you connect to it. It is built on the
+[Laravel AI SDK](https://laravel.com/docs/ai-sdk), ships as a desktop application (the primary experience) plus a web
+console, and can always be taken over or stopped by you with a shortcut key.
+
+### What it can do
+
+| Capability | Description |
+| --- | --- |
+| `run_shell_command` | Run shell commands on your computer and read the output. |
+| `computer_use` | See the screen and drive the mouse and keyboard: screenshot, move, click, type, keys, scroll, open apps. |
+| `list_directory`, `read_file`, `write_file` | Work with files on your computer. |
+| `list_connections`, `run_connection_tool` | Act inside connected products: Gmail, Google Drive, Google Calendar, Google Docs, Google Sheets, Notion, Todoist, Slack, Linear, GitHub, and more. |
+
+### You are always in control
+
+Every Jarvis session is stored in `jarvis_sessions` and can be paused, resumed, taken over, or stopped:
+
+| Shortcut | Action |
+| --- | --- |
+| `Cmd/Ctrl + Shift + J` | **Take over** - Jarvis stops acting immediately and hands control back to you. |
+| `Cmd/Ctrl + Shift + Space` | Pause or resume. |
+| `Cmd/Ctrl + Shift + Backspace` | Stop the session. |
+| `Escape` | Take over (inside the web console). |
+
+Taking over cancels every tool call that is in flight on your desktop, so nothing keeps running behind your back. On
+top of that, risky tool calls can require your explicit approval before they execute
+(`JARVIS_REQUIRE_APPROVAL`), commands matching `jarvis.shell.blocked_patterns` are always refused, and writes to
+`jarvis.filesystem.protected_paths` are blocked even after approval.
+
+### Setup
+
+1. Add an AI provider key (any provider supported by the AI SDK, OpenAI by default):
+
+```bash
+OPENAI_API_KEY=sk-...
+# or ANTHROPIC_API_KEY=, GEMINI_API_KEY=, ...
+```
+
+2. Add a [Composio](https://composio.dev) API key to enable one-step connections:
+
+```bash
+COMPOSIO_API_KEY=...
+```
+
+3. Migrate and open the console:
+
+```bash
+php artisan migrate
+composer dev
+```
+
+- **Web console:** `/jarvis` - prompt Jarvis, watch the transcript, approve tool calls, and take over.
+- **Connections:** `/jarvis/connections` - click **Connect** next to Gmail, Drive, Notion, Todoist, and more. You are
+  sent to the provider once, and the connection is done.
+
+### Desktop application
+
+The desktop app is the main way to run Jarvis: it loads the console, registers the global shortcuts above, lives in
+your tray, and executes every tool call on your own machine.
+
+```bash
+cd desktop
+npm install
+npm start
+```
+
+- Set `JARVIS_URL` to point at your Jarvis instance (defaults to `http://localhost:8000`).
+- Sign in inside the window: the app pairs itself with your account automatically and stores its device token in
+  `jarvis.json` under the app's user data directory.
+- The app polls `GET /api/jarvis/devices/next`, executes the capability locally, and reports the result back to
+  `POST /api/jarvis/devices/calls/{call}`.
+
+### Where commands run
+
+`JARVIS_SHELL_TARGET` decides where capabilities execute:
+
+| Value | Behaviour |
+| --- | --- |
+| `auto` (default) | Use the connected desktop device when one is online, otherwise run on the server hosting Jarvis. |
+| `device` | Only ever run on the connected desktop device. |
+| `local` | Always run on the machine hosting Jarvis. |
+
+### Tests
+
+```bash
+php artisan test --compact   # Laravel feature tests, including the take-over, device API, and connection flows
+cd desktop && npm test       # Desktop executor and device agent tests (node:test)
+```
+
 ## License
 
 The Fission starter kit is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).

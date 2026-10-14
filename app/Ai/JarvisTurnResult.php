@@ -25,7 +25,9 @@ final readonly class JarvisTurnResult
      */
     public function text(): string
     {
-        return $this->response?->text ?? '';
+        $response = $this->response;
+
+        return $response instanceof AgentResponse ? $response->text : '';
     }
 
     /**
@@ -35,7 +37,9 @@ final readonly class JarvisTurnResult
      */
     public function pendingApprovals(): Collection
     {
-        return $this->response?->pendingApprovals ?? new Collection;
+        $response = $this->response;
+
+        return $response instanceof AgentResponse ? $response->pendingApprovals : new Collection;
     }
 
     /**
@@ -43,7 +47,9 @@ final readonly class JarvisTurnResult
      */
     public function isAwaitingApproval(): bool
     {
-        return $this->response?->hasPendingApprovals() ?? false;
+        $response = $this->response;
+
+        return $response instanceof AgentResponse && $response->hasPendingApprovals();
     }
 
     /**

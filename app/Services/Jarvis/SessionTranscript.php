@@ -36,7 +36,7 @@ final class SessionTranscript
     /**
      * Get the tool calls that are waiting for the user's approval.
      *
-     * @return list<array{id: string, tool: string, arguments: array<string, mixed>, reason: string|null}>
+     * @return list<array{id: string, tool: string, arguments: array<array-key, mixed>, reason: string|null}>
      */
     public function pendingApprovals(JarvisSession $session): array
     {
@@ -56,22 +56,27 @@ final class SessionTranscript
             return [];
         }
 
-        /** @var array<string, mixed> $pending */
-        $pending = (array) ($row->approval_state['pending'] ?? []);
+        $state = $row->getAttribute('approval_state');
+        $pending = is_array($state) && is_array($state['pending'] ?? null) ? $state['pending'] : [];
 
-        /** @var Collection<int, array<string, mixed>> $toolCalls */
-        $toolCalls = collect((array) ($row->tool_calls ?? []))->keyBy('id');
+        $toolCalls = [];
+
+        foreach ((array) ($row->tool_calls ?? []) as $call) {
+            if (is_array($call) && is_string($call['id'] ?? null)) {
+                $toolCalls[$call['id']] = $call;
+            }
+        }
 
         $approvals = [];
 
         foreach ($pending as $id => $reason) {
-            /** @var array<string, mixed>|null $call */
-            $call = $toolCalls->get((string) $id);
+            $key = is_string($id) ? $id : (string) $id;
+            $call = $toolCalls[$key] ?? null;
 
             $approvals[] = [
-                'id' => (string) $id,
-                'tool' => is_string($call['name'] ?? null) ? $call['name'] : 'unknown',
-                'arguments' => is_array($call['arguments'] ?? null) ? $call['arguments'] : [],
+                'id' => $key,
+                'tool' => is_array($call) && is_string($call['name'] ?? null) ? $call['name'] : 'unknown',
+                'arguments' => is_array($call) && is_array($call['arguments'] ?? null) ? $call['arguments'] : [],
                 'reason' => is_string($reason) ? $reason : null,
             ];
         }

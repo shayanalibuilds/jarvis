@@ -7,8 +7,10 @@ namespace App\Services\Jarvis;
 use App\Exceptions\Jarvis\BlockedCommandException;
 use App\Exceptions\Jarvis\JarvisInterruptedException;
 use App\Models\JarvisSession;
+use App\Models\User;
 use App\Services\Jarvis\ComputerUse\ComputerUseManager;
 use App\Services\Jarvis\Shell\CommandRunner;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\File;
 use RuntimeException;
 use Throwable;
@@ -32,12 +34,12 @@ final class CapabilityExecutor
      */
     public function targetFor(JarvisSession $session): string
     {
-        $configured = (string) config('jarvis.shell.target', 'auto');
+        $configured = Config::string('jarvis.shell.target', 'auto');
 
         return match ($configured) {
             'device' => 'device',
             'local' => 'local',
-            default => $this->devices->hasActiveDevice($session->user) ? 'device' : 'local',
+            default => $this->devices->hasActiveDevice($this->userFor($session)) ? 'device' : 'local',
         };
     }
 
@@ -83,22 +85,24 @@ final class CapabilityExecutor
      */
     private function runShellCommand(array $arguments): string
     {
-        if (! (bool) config('jarvis.shell.enabled', true)) {
+        if (! Config::boolean('jarvis.shell.enabled', true)) {
             return $this->error('Shell execution is disabled.');
         }
 
-        $command = (string) ($arguments['command'] ?? '');
+        $command = $this->stringArgument($arguments, 'command');
 
         if (mb_trim($command) === '') {
             return $this->error('A command is required.');
         }
 
+        $configuredWorkingDirectory = config('jarvis.shell.working_directory');
+
         try {
             $result = $this->runner->run(
                 command: $command,
-                workingDirectory: $this->stringOrNull($arguments['working_directory'] ?? null)
-                    ?? $this->stringOrNull(config('jarvis.shell.working_directory')),
-                timeout: is_numeric($arguments['timeout'] ?? null) ? (int) $arguments['timeout'] : null,
+                workingDirectory: $this->stringArgument($arguments, 'working_directory')
+                    ?: (is_string($configuredWorkingDirectory) && $configuredWorkingDirectory !== '' ? $configuredWorkingDirectory : null),
+                timeout: $this->intArgument($arguments, 'timeout') ?: null,
             );
         } catch (BlockedCommandException $exception) {
             return $this->error($exception->getMessage());
@@ -118,29 +122,46 @@ final class CapabilityExecutor
      */
     private function runComputerUse(array $arguments): string
     {
-        if (! (bool) config('jarvis.computer_use.enabled', true)) {
+        if (! Config::boolean('jarvis.computer_use.enabled', true)) {
             return $this->error('Computer use is disabled.');
         }
 
-        $action = (string) ($arguments['action'] ?? '');
+        $action = $this->stringArgument($arguments, 'action');
         $driver = $this->computer->driver();
 
         try {
-            $output = match ($action) {
-                'screenshot' => ['path' => $this->computer->screenshot()],
-                'move' => $this->nullify($driver->move($this->int($arguments, 'x'), $this->int($arguments, 'y'))),
-                'click' => $this->nullify($driver->click(
-                    $this->int($arguments, 'x'),
-                    $this->int($arguments, 'y'),
-                    $this->stringOrNull($arguments['button'] ?? null) ?? 'left',
-                    $this->int($arguments, 'clicks', 1),
-                )),
-                'type' => $this->nullify($driver->type((string) ($arguments['text'] ?? ''))),
-                'key' => $this->nullify($driver->pressKey((string) ($arguments['key'] ?? ''))),
-                'scroll' => $this->nullify($driver->scroll($this->int($arguments, 'amount'))),
-                'open_app' => $this->nullify($driver->openApplication((string) ($arguments['application'] ?? ''))),
-                default => throw new RuntimeException("Unknown computer use action [{$action}]."),
-            };
+            $output = ['ok' => true];
+
+            switch ($action) {
+                case 'screenshot':
+                    $output = ['path' => $this->computer->screenshot()];
+                    break;
+                case 'move':
+                    $driver->move($this->intArgument($arguments, 'x'), $this->intArgument($arguments, 'y'));
+                    break;
+                case 'click':
+                    $driver->click(
+                        $this->intArgument($arguments, 'x'),
+                        $this->intArgument($arguments, 'y'),
+                        $this->stringArgument($arguments, 'button') ?: 'left',
+                        max(1, $this->intArgument($arguments, 'clicks', 1)),
+                    );
+                    break;
+                case 'type':
+                    $driver->type($this->stringArgument($arguments, 'text'));
+                    break;
+                case 'key':
+                    $driver->pressKey($this->stringArgument($arguments, 'key'));
+                    break;
+                case 'scroll':
+                    $driver->scroll($this->intArgument($arguments, 'amount'));
+                    break;
+                case 'open_app':
+                    $driver->openApplication($this->stringArgument($arguments, 'application'));
+                    break;
+                default:
+                    throw new RuntimeException("Unknown computer use action [{$action}].");
+            }
         } catch (Throwable $exception) {
             return $this->error($exception->getMessage());
         }
@@ -161,7 +182,7 @@ final class CapabilityExecutor
      */
     private function readFile(array $arguments): string
     {
-        $path = (string) ($arguments['path'] ?? '');
+        $path = $this->stringArgument($arguments, 'path');
 
         if (! File::exists($path)) {
             return $this->error("The file [{$path}] does not exist.");
@@ -182,8 +203,8 @@ final class CapabilityExecutor
      */
     private function writeFile(array $arguments): string
     {
-        $path = (string) ($arguments['path'] ?? '');
-        $contents = (string) ($arguments['contents'] ?? '');
+        $path = $this->stringArgument($arguments, 'path');
+        $contents = $this->stringArgument($arguments, 'contents');
 
         if ($this->isProtectedPath($path)) {
             return $this->error("Writing to [{$path}] is blocked by the Jarvis configuration.");
@@ -207,26 +228,38 @@ final class CapabilityExecutor
      */
     private function listDirectory(array $arguments): string
     {
-        $path = (string) ($arguments['path'] ?? '.');
+        $path = $this->stringArgument($arguments, 'path') ?: '.';
 
         if (! File::isDirectory($path)) {
             return $this->error("The directory [{$path}] does not exist.");
         }
 
-        $entries = File::glob(mb_rtrim($path, '/').'/*');
+        $entries = [];
+
+        /** @var list<string> $directories */
+        $directories = File::directories($path);
+
+        foreach ($directories as $directory) {
+            $entries[] = [
+                'name' => basename($directory),
+                'path' => $directory,
+                'type' => 'directory',
+            ];
+        }
+
+        foreach (File::files($path) as $file) {
+            $entries[] = [
+                'name' => $file->getFilename(),
+                'path' => $file->getPathname(),
+                'type' => 'file',
+            ];
+        }
 
         return $this->json([
             'capability' => 'list_directory',
             'target' => 'local',
             'path' => $path,
-            'entries' => array_map(
-                fn (string $entry): array => [
-                    'name' => basename($entry),
-                    'path' => $entry,
-                    'type' => is_dir($entry) ? 'directory' : 'file',
-                ],
-                $entries === false ? [] : $entries,
-            ),
+            'entries' => $entries,
         ]);
     }
 
@@ -236,7 +269,7 @@ final class CapabilityExecutor
     private function isProtectedPath(string $path): bool
     {
         /** @var list<string> $protected */
-        $protected = config('jarvis.filesystem.protected_paths', []);
+        $protected = Config::array('jarvis.filesystem.protected_paths', []);
 
         foreach ($protected as $prefix) {
             if ($prefix !== '' && str_starts_with($path, $prefix)) {
@@ -250,7 +283,17 @@ final class CapabilityExecutor
     /**
      * @param  array<string, mixed>  $arguments
      */
-    private function int(array $arguments, string $key, int $default = 0): int
+    private function stringArgument(array $arguments, string $key, string $default = ''): string
+    {
+        $value = $arguments[$key] ?? null;
+
+        return is_string($value) ? $value : $default;
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     */
+    private function intArgument(array $arguments, string $key, int $default = 0): int
     {
         $value = $arguments[$key] ?? null;
 
@@ -258,16 +301,14 @@ final class CapabilityExecutor
     }
 
     /**
-     * Convert a void return into something JSON serialisable.
+     * Get the user that owns the session.
      */
-    private function nullify(mixed $value): mixed
+    private function userFor(JarvisSession $session): User
     {
-        return $value ?? ['ok' => true];
-    }
+        /** @var User $user */
+        $user = $session->user;
 
-    private function stringOrNull(mixed $value): ?string
-    {
-        return is_string($value) && $value !== '' ? $value : null;
+        return $user;
     }
 
     /**

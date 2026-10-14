@@ -46,6 +46,7 @@ final class RunConnectionTool extends JarvisTool
 
         $arguments = $request->array('arguments');
 
+        /** @var array<string, mixed> $arguments */
         if (! $this->toolkitIsConnected($tool)) {
             return $this->error(sprintf(
                 'The [%s] action is not available because that product is not connected. Ask the user to connect it from the Connections screen.',

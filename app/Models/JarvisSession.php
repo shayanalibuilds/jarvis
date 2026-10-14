@@ -12,35 +12,29 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Override;
 
+/**
+ * @property JarvisSessionStatus $status
+ * @property array<string, mixed>|null $meta
+ * @property \Illuminate\Support\Carbon|null $last_activity_at
+ * @property \Illuminate\Support\Carbon|null $started_at
+ * @property \Illuminate\Support\Carbon|null $stopped_at
+ * @property \Illuminate\Support\Carbon|null $taken_over_at
+ * @property string $user_id
+ * @property string|null $conversation_id
+ * @property string|null $current_tool
+ * @property string $title
+ */
 final class JarvisSession extends Model
 {
+    /** @use HasFactory<\Database\Factories\JarvisSessionFactory> */
     use HasFactory;
+
     use HasUuids;
 
     /**
      * @var list<string>
      */
     protected $guarded = [];
-
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    #[Override]
-    protected function casts(): array
-    {
-        return [
-            'id' => 'string',
-            'status' => JarvisSessionStatus::class,
-            'meta' => 'array',
-            'started_at' => 'datetime',
-            'paused_at' => 'datetime',
-            'taken_over_at' => 'datetime',
-            'stopped_at' => 'datetime',
-            'last_activity_at' => 'datetime',
-        ];
-    }
 
     /**
      * Get the user that owns the session.
@@ -94,5 +88,25 @@ final class JarvisSession extends Model
     public function touchActivity(): void
     {
         $this->forceFill(['last_activity_at' => now()])->save();
+    }
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    #[Override]
+    protected function casts(): array
+    {
+        return [
+            'id' => 'string',
+            'status' => JarvisSessionStatus::class,
+            'meta' => 'array',
+            'started_at' => 'datetime',
+            'paused_at' => 'datetime',
+            'taken_over_at' => 'datetime',
+            'stopped_at' => 'datetime',
+            'last_activity_at' => 'datetime',
+        ];
     }
 }

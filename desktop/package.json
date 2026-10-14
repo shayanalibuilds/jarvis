@@ -1,0 +1,15 @@
+{
+    "name": "jarvis-desktop",
+    "version": "0.1.0",
+    "private": true,
+    "description": "Jarvis desktop application. Runs Jarvis on your computer, registers global take-over shortcuts, and executes tool calls locally.",
+    "main": "main.js",
+    "type": "commonjs",
+    "scripts": {
+        "start": "electron .",
+        "test": "node --test test/*.test.js"
+    },
+    "devDependencies": {
+        "electron": "^33.0.0"
+    }
+}

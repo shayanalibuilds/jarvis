@@ -11,8 +11,10 @@ use App\Exceptions\Jarvis\JarvisInterruptedException;
 use App\Models\JarvisSession;
 use App\Models\User;
 use Closure;
+use Illuminate\Support\Facades\Config;
 use Laravel\Ai\Approvals\Decision;
 use Laravel\Ai\Approvals\Decisions;
+use Laravel\Ai\Responses\AgentResponse;
 use Throwable;
 
 /**
@@ -124,8 +126,12 @@ final class RunJarvisTurn
 
         $response = $result->response;
 
+        $conversationId = $response instanceof AgentResponse && $response->conversationId !== null
+            ? $response->conversationId
+            : $session->conversation_id;
+
         $session->update([
-            'conversation_id' => $response?->conversationId ?? $session->conversation_id,
+            'conversation_id' => $conversationId,
             'current_tool' => null,
             'last_activity_at' => now(),
         ]);
@@ -169,6 +175,6 @@ final class RunJarvisTurn
      */
     private function timeout(): int
     {
-        return max(1, (int) config('jarvis.agent.timeout', 120));
+        return max(1, Config::integer('jarvis.agent.timeout', 120));
     }
 }

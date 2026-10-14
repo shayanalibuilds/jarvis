@@ -10,29 +10,24 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Override;
 
+/**
+ * @property string $session_id
+ * @property string|null $user_id
+ * @property string $type
+ * @property string $summary
+ * @property array<string, mixed>|null $payload
+ */
 final class JarvisEvent extends Model
 {
+    /** @use HasFactory<\Database\Factories\JarvisEventFactory> */
     use HasFactory;
+
     use HasUuids;
 
     /**
      * @var list<string>
      */
     protected $guarded = [];
-
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    #[Override]
-    protected function casts(): array
-    {
-        return [
-            'id' => 'string',
-            'payload' => 'array',
-        ];
-    }
 
     /**
      * Get the session the event belongs to.
@@ -52,5 +47,19 @@ final class JarvisEvent extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    #[Override]
+    protected function casts(): array
+    {
+        return [
+            'id' => 'string',
+            'payload' => 'array',
+        ];
     }
 }

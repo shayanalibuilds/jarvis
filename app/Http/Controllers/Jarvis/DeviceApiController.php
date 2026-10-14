@@ -16,6 +16,8 @@ use App\Models\JarvisToolCall;
 use App\Services\Jarvis\DeviceBridge;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Endpoints used by the Jarvis desktop application.
@@ -59,7 +61,7 @@ final class DeviceApiController extends Controller
                 'id' => $call->getKey(),
                 'capability' => $call->tool,
                 'arguments' => $call->arguments ?? [],
-                'timeout' => (int) config('jarvis.shell.timeout', 60),
+                'timeout' => Config::integer('jarvis.shell.timeout', 60),
             ],
         ]);
     }
@@ -73,12 +75,14 @@ final class DeviceApiController extends Controller
 
         abort_unless($call->device_id === $device->getKey(), 403, 'This tool call belongs to another device.');
 
-        $validated = $request->validate([
-            'result' => ['nullable', 'string'],
-            'error' => ['nullable', 'string'],
-        ]);
+        $result = $request->input('result');
+        $error = $request->input('error');
 
-        $bridge->complete($call, $validated['result'] ?? null, $validated['error'] ?? null);
+        $bridge->complete(
+            $call,
+            is_string($result) ? $result : null,
+            is_string($error) ? $error : null,
+        );
 
         return response()->json(['ok' => true]);
     }
@@ -103,9 +107,13 @@ final class DeviceApiController extends Controller
         StopJarvisSession $stop,
         TakeOverJarvisSession $takeOver,
     ): JsonResponse {
-        $validated = $request->validate([
-            'action' => ['required', 'string', 'in:take_over,pause,resume,stop'],
-        ]);
+        $action = $request->string('action')->value();
+
+        if (! in_array($action, ['take_over', 'pause', 'resume', 'stop'], true)) {
+            throw ValidationException::withMessages([
+                'action' => 'The action must be one of: take_over, pause, resume, stop.',
+            ]);
+        }
 
         $device = $this->device($request);
 
@@ -122,7 +130,7 @@ final class DeviceApiController extends Controller
             ]);
         }
 
-        match ($validated['action']) {
+        match ($action) {
             'take_over' => $takeOver($session, 'Taken over from the desktop shortcut.'),
             'pause' => $pause($session, 'Paused from the desktop shortcut.'),
             'resume' => $resume($session, 'Resumed from the desktop shortcut.'),

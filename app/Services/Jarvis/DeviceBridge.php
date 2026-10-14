@@ -12,6 +12,7 @@ use App\Models\JarvisSession;
 use App\Models\JarvisToolCall;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -28,7 +29,7 @@ final class DeviceBridge
      */
     public function activeDeviceFor(User $user): ?JarvisDevice
     {
-        $ttl = (int) config('jarvis.devices.heartbeat_ttl', 60);
+        $ttl = Config::integer('jarvis.devices.heartbeat_ttl', 60);
 
         return JarvisDevice::query()
             ->where('user_id', $user->getKey())
@@ -55,7 +56,7 @@ final class DeviceBridge
      */
     public function dispatch(JarvisSession $session, string $tool, array $arguments, ?int $timeout = null): string
     {
-        $device = $this->activeDeviceFor($session->user);
+        $device = $this->activeDeviceFor($this->userFor($session));
 
         if (! $device instanceof JarvisDevice) {
             throw DeviceBridgeException::noDeviceOnline();
@@ -71,7 +72,7 @@ final class DeviceBridge
             'arguments' => $arguments,
         ]);
 
-        $timeout ??= (int) config('jarvis.devices.result_timeout', 90);
+        $timeout ??= Config::integer('jarvis.devices.result_timeout', 90);
         $deadline = now()->addSeconds($timeout);
 
         while (now()->lt($deadline)) {
@@ -170,5 +171,16 @@ final class DeviceBridge
                 'error' => $reason,
                 'completed_at' => now(),
             ]);
+    }
+
+    /**
+     * Get the user that owns the session.
+     */
+    private function userFor(JarvisSession $session): User
+    {
+        /** @var User $user */
+        $user = $session->user;
+
+        return $user;
     }
 }
