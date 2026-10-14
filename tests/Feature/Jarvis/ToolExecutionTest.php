@@ -10,8 +10,8 @@ use App\Ai\Tools\WriteFile;
 use App\Exceptions\Jarvis\JarvisInterruptedException;
 use App\Models\JarvisSession;
 use App\Services\Jarvis\CapabilityExecutor;
-use App\Services\Jarvis\ComputerUse\ComputerUseManager;
 use App\Services\Jarvis\ComputerUse\ComputerUseDriver;
+use App\Services\Jarvis\ComputerUse\ComputerUseManager;
 use Laravel\Ai\Tools\Request;
 
 beforeEach(function (): void {
@@ -126,8 +126,8 @@ test('the computer use tool reports the active driver', function (): void {
     };
 
     $tool = new ComputerUse(new CapabilityExecutor(
-        app(\App\Services\Jarvis\DeviceBridge::class),
-        app(\App\Services\Jarvis\Shell\CommandRunner::class),
+        app(App\Services\Jarvis\DeviceBridge::class),
+        app(App\Services\Jarvis\Shell\CommandRunner::class),
         new ComputerUseManager($driver),
     ), $session);
 

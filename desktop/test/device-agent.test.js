@@ -72,7 +72,7 @@ test('a claimed call is executed locally and reported back', async () => {
 
                 return JSON.stringify({ successful: true, capability, output: 'hi' });
             },
-        },
+        }
     );
 
     await agent.heartbeat();
@@ -93,7 +93,7 @@ test('a failing capability is reported as an error', async () => {
             '/api/jarvis/devices/next': () => ({ call: { id: 'call-2', capability: 'run_shell_command', arguments: {} } }),
             '/api/jarvis/devices/calls/call-2': () => ({ ok: true }),
         },
-        { execute: async () => JSON.stringify({ successful: false, error: 'the command is blocked' }) },
+        { execute: async () => JSON.stringify({ successful: false, error: 'the command is blocked' }) }
     );
 
     await agent.pollOnce();
@@ -106,15 +106,13 @@ test('a failing capability is reported as an error', async () => {
 
 test('nothing runs while the user has taken over', async () => {
     let polled = false;
-    const { agent } = createAgent(
-        {
-            '/api/jarvis/devices/next': () => {
-                polled = true;
+    const { agent } = createAgent({
+        '/api/jarvis/devices/next': () => {
+            polled = true;
 
-                return { call: null };
-            },
+            return { call: null };
         },
-    );
+    });
 
     agent.session = { status: 'taken_over', allows_execution: false };
 
@@ -126,7 +124,10 @@ test('nothing runs while the user has taken over', async () => {
 
 test('the desktop shortcut control calls the control endpoint', async () => {
     const { agent, calls } = createAgent({
-        '/api/jarvis/control': () => ({ session: { id: 'session-1', status: 'taken_over', allows_execution: false, status_label: 'You have taken over' }, message: 'Jarvis is now You have taken over.' }),
+        '/api/jarvis/control': () => ({
+            session: { id: 'session-1', status: 'taken_over', allows_execution: false, status_label: 'You have taken over' },
+            message: 'Jarvis is now You have taken over.',
+        }),
     });
 
     const payload = await agent.control('take_over');
@@ -138,10 +139,14 @@ test('the desktop shortcut control calls the control endpoint', async () => {
 
 test('the agent can be started and stopped', async () => {
     const events = [];
-    const { agent } = createAgent({
-        '/api/jarvis/devices/heartbeat': () => ({ session: { allows_execution: true } }),
-        '/api/jarvis/devices/next': () => ({ call: null }),
-    }, undefined, events);
+    const { agent } = createAgent(
+        {
+            '/api/jarvis/devices/heartbeat': () => ({ session: { allows_execution: true } }),
+            '/api/jarvis/devices/next': () => ({ call: null }),
+        },
+        undefined,
+        events
+    );
 
     agent.pollIntervalMs = 5;
 

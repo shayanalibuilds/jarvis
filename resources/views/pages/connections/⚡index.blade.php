@@ -49,7 +49,7 @@ new #[Layout('layouts::app')] class extends Component {
         $redirect = $connection->meta['redirect_url'] ?? null;
 
         if (! is_string($redirect) || $redirect === '') {
-            $this->error = 'Composio did not return an authorization link for '.$toolkit.'.';
+            $this->error = 'Composio did not return an authorization link for ' . $toolkit . '.';
 
             return;
         }
@@ -71,7 +71,7 @@ new #[Layout('layouts::app')] class extends Component {
             $disconnect($connection);
         }
 
-        Flux::toast('Disconnected '.$toolkit.'.', variant: 'success');
+        Flux::toast('Disconnected ' . $toolkit . '.', variant: 'success');
     }
 
     /**
@@ -132,8 +132,8 @@ new #[Layout('layouts::app')] class extends Component {
         </div>
 
         <flux:text>
-            Connect a product once and Jarvis can use it right away. Authorization is brokered for you, so there is
-            nothing to configure: click connect, approve access, and you are done.
+            Connect a product once and Jarvis can use it right away. Authorization is brokered for you, so there is nothing to configure: click
+            connect, approve access, and you are done.
         </flux:text>
 
         @if ($error)
@@ -149,8 +149,10 @@ new #[Layout('layouts::app')] class extends Component {
                 @foreach ($group['toolkits'] as $toolkit)
                     @php($connection = $connections->get($toolkit['slug']))
                     @php($status = $connection?->status)
-                    <div wire:key="{{ $toolkit['slug'] }}"
-                        class="flex items-start justify-between gap-3 rounded-lg border border-zinc-200 p-3 dark:border-zinc-700">
+                    <div
+                        wire:key="{{ $toolkit['slug'] }}"
+                        class="flex items-start justify-between gap-3 rounded-lg border border-zinc-200 p-3 dark:border-zinc-700"
+                    >
                         <div class="space-y-1">
                             <div class="flex items-center gap-2">
                                 <flux:text class="font-medium">{{ $toolkit['name'] }}</flux:text>
@@ -167,13 +169,16 @@ new #[Layout('layouts::app')] class extends Component {
 
                         <div class="flex shrink-0 gap-2">
                             @if ($status === \App\Enums\JarvisConnectionStatus::Active)
-                                <flux:button size="sm" variant="ghost" wire:click="disconnect('{{ $toolkit['slug'] }}')">
-                                    Disconnect
-                                </flux:button>
+                                <flux:button size="sm" variant="ghost" wire:click="disconnect('{{ $toolkit['slug'] }}')">Disconnect</flux:button>
                             @else
-                                <flux:button size="sm" variant="primary" icon="link"
-                                    wire:click="connect('{{ $toolkit['slug'] }}')" wire:loading.attr="disabled"
-                                    :disabled="! $configured">
+                                <flux:button
+                                    size="sm"
+                                    variant="primary"
+                                    icon="link"
+                                    wire:click="connect('{{ $toolkit['slug'] }}')"
+                                    wire:loading.attr="disabled"
+                                    :disabled="! $configured"
+                                >
                                     Connect
                                 </flux:button>
                             @endif

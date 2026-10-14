@@ -63,10 +63,12 @@ test('reads, writes, and lists files', async () => {
     const directory = temporaryDirectory();
     const executor = createLocalExecutor({ platform: 'linux' });
 
-    const written = JSON.parse(await executor.execute('write_file', {
-        path: path.join(directory, 'notes.txt'),
-        contents: 'hello from the desktop',
-    }));
+    const written = JSON.parse(
+        await executor.execute('write_file', {
+            path: path.join(directory, 'notes.txt'),
+            contents: 'hello from the desktop',
+        })
+    );
 
     assert.equal(written.successful, true);
     assert.equal(written.bytes, 22);
@@ -87,10 +89,12 @@ test('reads, writes, and lists files', async () => {
 test('refuses to write to protected paths', async () => {
     const executor = createLocalExecutor({ platform: 'linux' });
 
-    const result = JSON.parse(await executor.execute('write_file', {
-        path: '/etc/jarvis.conf',
-        contents: 'nope',
-    }));
+    const result = JSON.parse(
+        await executor.execute('write_file', {
+            path: '/etc/jarvis.conf',
+            contents: 'nope',
+        })
+    );
 
     assert.equal(result.successful, false);
     assert.match(result.error, /blocked/);

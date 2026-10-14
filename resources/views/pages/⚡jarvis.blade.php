@@ -140,8 +140,13 @@ new #[Layout('layouts::app')] class extends Component {
      * Handle a global keyboard shortcut from the web or desktop application.
      */
     #[On('jarvis-shortcut')]
-    public function shortcut(string $action, TakeOverJarvisSession $takeOver, StopJarvisSession $stop, PauseJarvisSession $pause, ResumeJarvisSession $resume): void
-    {
+    public function shortcut(
+        string $action,
+        TakeOverJarvisSession $takeOver,
+        StopJarvisSession $stop,
+        PauseJarvisSession $pause,
+        ResumeJarvisSession $resume,
+    ): void {
         match ($action) {
             'take_over' => $this->takeOver($takeOver),
             'stop' => $this->stop($stop),
@@ -207,7 +212,13 @@ new #[Layout('layouts::app')] class extends Component {
             'session' => $session,
             'messages' => $session instanceof JarvisSession ? $transcript->messages($session) : collect(),
             'pendingApprovals' => $session instanceof JarvisSession ? $transcript->pendingApprovals($session) : [],
-            'events' => $session instanceof JarvisSession ? $session->events()->limit(15)->get() : collect(),
+            'events' =>
+                $session instanceof JarvisSession
+                    ? $session
+                        ->events()
+                        ->limit(15)
+                        ->get()
+                    : collect(),
             'deviceOnline' => app(DeviceBridge::class)->hasActiveDevice($this->user()),
             'shortcuts' => config('jarvis.control.shortcuts'),
             'shellTarget' => (string) config('jarvis.shell.target', 'auto'),
@@ -226,12 +237,15 @@ new #[Layout('layouts::app')] class extends Component {
     };
 @endphp
 
-<div class="space-y-6" x-data x-on:keydown.window.ctrl.shift.j.prevent="$wire.shortcut('take_over')"
+<div
+    class="space-y-6"
+    x-data
+    x-on:keydown.window.ctrl.shift.j.prevent="$wire.shortcut('take_over')"
     x-on:keydown.window.meta.shift.j.prevent="$wire.shortcut('take_over')"
     x-on:keydown.window.ctrl.shift.space.prevent="$wire.shortcut('pause')"
     x-on:keydown.window.meta.shift.space.prevent="$wire.shortcut('pause')"
-    x-on:keydown.window.escape="$wire.shortcut('take_over')">
-
+    x-on:keydown.window.escape="$wire.shortcut('take_over')"
+>
     <flux:card class="space-y-5">
         <div class="flex flex-wrap items-center gap-3">
             <flux:heading size="lg">{{ config('jarvis.name') }}</flux:heading>
@@ -245,21 +259,18 @@ new #[Layout('layouts::app')] class extends Component {
 
         <flux:text>
             Jarvis runs on your computer and acts through your connected apps. You are always in control: press
-            <flux:badge size="sm">{{ $shortcuts['take_over']['accelerator'] }}</flux:badge> to take over, or
-            <flux:badge size="sm">{{ $shortcuts['pause']['accelerator'] }}</flux:badge> to pause and resume. Escape
-            also takes over.
+            <flux:badge size="sm">{{ $shortcuts['take_over']['accelerator'] }}</flux:badge>
+            to take over, or
+            <flux:badge size="sm">{{ $shortcuts['pause']['accelerator'] }}</flux:badge>
+            to pause and resume. Escape also takes over.
         </flux:text>
 
         <div class="flex flex-wrap gap-2">
-            <flux:button wire:click="takeOver" icon="hand-raised" variant="filled" :disabled="$session === null">
-                Take over
-            </flux:button>
+            <flux:button wire:click="takeOver" icon="hand-raised" variant="filled" :disabled="$session === null">Take over</flux:button>
             <flux:button wire:click="togglePause" icon="pause" :disabled="$session === null">
                 {{ $status?->allowsExecution() ? 'Pause' : 'Resume' }}
             </flux:button>
-            <flux:button wire:click="stop" icon="stop" variant="danger" :disabled="$session === null">
-                Stop
-            </flux:button>
+            <flux:button wire:click="stop" icon="stop" variant="danger" :disabled="$session === null">Stop</flux:button>
             <flux:button wire:click="newSession" icon="plus" variant="ghost">New session</flux:button>
         </div>
 
@@ -268,7 +279,8 @@ new #[Layout('layouts::app')] class extends Component {
                 Session {{ \Illuminate\Support\Str::limit($session->id, 8, '') }} &middot; last activity
                 {{ $session->last_activity_at?->diffForHumans() ?? 'never' }}
                 @if ($session->current_tool)
-                    &middot; doing <span class="font-medium">{{ $session->current_tool }}</span>
+                    &middot; doing
+                    <span class="font-medium">{{ $session->current_tool }}</span>
                 @endif
             </flux:text>
         @endif
@@ -282,20 +294,19 @@ new #[Layout('layouts::app')] class extends Component {
             </div>
 
             @foreach ($pendingApprovals as $approval)
-                <div wire:key="{{ $approval['id'] }}"
-                    class="space-y-2 rounded-lg border border-zinc-200 p-3 dark:border-zinc-700">
+                <div wire:key="{{ $approval['id'] }}" class="space-y-2 rounded-lg border border-zinc-200 p-3 dark:border-zinc-700">
                     <flux:text class="font-medium">{{ $approval['tool'] }}</flux:text>
                     @if ($approval['reason'])
                         <flux:text>{{ $approval['reason'] }}</flux:text>
                     @endif
-                    <pre class="overflow-x-auto rounded bg-zinc-50 p-2 text-xs dark:bg-zinc-900">{{ json_encode($approval['arguments'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) }}</pre>
+
+                    <pre class="overflow-x-auto rounded bg-zinc-50 p-2 text-xs dark:bg-zinc-900">
+{{ json_encode($approval['arguments'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) }}</pre>
                     <div class="flex gap-2">
-                        <flux:button size="sm" variant="primary" wire:click="approve('{{ $approval['id'] }}')"
-                            wire:loading.attr="disabled">
+                        <flux:button size="sm" variant="primary" wire:click="approve('{{ $approval['id'] }}')" wire:loading.attr="disabled">
                             Approve
                         </flux:button>
-                        <flux:button size="sm" variant="danger" wire:click="reject('{{ $approval['id'] }}')"
-                            wire:loading.attr="disabled">
+                        <flux:button size="sm" variant="danger" wire:click="reject('{{ $approval['id'] }}')" wire:loading.attr="disabled">
                             Reject
                         </flux:button>
                     </div>
@@ -306,17 +317,19 @@ new #[Layout('layouts::app')] class extends Component {
 
     <flux:card class="space-y-4">
         <form wire:submit="run" class="space-y-3">
-            <flux:textarea wire:model="prompt" rows="3" :disabled="$busy"
-                placeholder="Tell Jarvis what to do on your computer, for example: find last week's invoices in Drive and email me a summary." />
+            <flux:textarea
+                wire:model="prompt"
+                rows="3"
+                :disabled="$busy"
+                placeholder="Tell Jarvis what to do on your computer, for example: find last week's invoices in Drive and email me a summary."
+            />
             <flux:error name="prompt" />
 
             <div class="flex flex-wrap items-center gap-3">
                 <flux:button type="submit" variant="primary" icon="play" :disabled="$busy">
                     {{ $busy ? 'Jarvis is working...' : 'Run' }}
                 </flux:button>
-                <flux:button type="button" variant="ghost" icon="hand-raised" wire:click="takeOver">
-                    Take over now
-                </flux:button>
+                <flux:button type="button" variant="ghost" icon="hand-raised" wire:click="takeOver">Take over now</flux:button>
                 @if ($error)
                     <flux:text class="text-red-600 dark:text-red-400">{{ $error }}</flux:text>
                 @endif
@@ -332,9 +345,8 @@ new #[Layout('layouts::app')] class extends Component {
         </div>
 
         @forelse ($messages as $message)
-            <div wire:key="{{ $message->id }}"
-                class="space-y-2 rounded-lg border border-zinc-200 p-3 dark:border-zinc-700">
-                <flux:text class="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+            <div wire:key="{{ $message->id }}" class="space-y-2 rounded-lg border border-zinc-200 p-3 dark:border-zinc-700">
+                <flux:text class="text-xs font-semibold tracking-wide text-zinc-500 uppercase">
                     {{ $message->role }}
                 </flux:text>
 
@@ -343,13 +355,12 @@ new #[Layout('layouts::app')] class extends Component {
                 @endif
 
                 @foreach ($message->tool_calls ?? [] as $call)
-                    <flux:text class="text-xs text-zinc-500">
-                        tool call &middot; {{ $call['name'] ?? 'unknown' }}
-                    </flux:text>
+                    <flux:text class="text-xs text-zinc-500">tool call &middot; {{ $call['name'] ?? 'unknown' }}</flux:text>
                 @endforeach
 
                 @foreach ($message->tool_results ?? [] as $result)
-                    <pre class="overflow-x-auto rounded bg-zinc-50 p-2 text-xs dark:bg-zinc-900">{{ \Illuminate\Support\Str::limit(json_encode($result, JSON_UNESCAPED_SLASHES), 600) }}</pre>
+                    <pre class="overflow-x-auto rounded bg-zinc-50 p-2 text-xs dark:bg-zinc-900">
+{{ \Illuminate\Support\Str::limit(json_encode($result, JSON_UNESCAPED_SLASHES), 600) }}</pre>
                 @endforeach
             </div>
         @empty

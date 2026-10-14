@@ -5,18 +5,12 @@ const path = require('node:path');
 const os = require('node:os');
 const { execFile } = require('node:child_process');
 
-const DEFAULT_BLOCKED_PATTERNS = [
-    'rm -rf /',
-    'mkfs',
-    ':(){ :|:& };:',
-    'dd if=/dev/zero',
-    '> /dev/sda',
-    'chmod -R 777 /',
-];
+const DEFAULT_BLOCKED_PATTERNS = ['rm -rf /', 'mkfs', ':(){ :|:& };:', 'dd if=/dev/zero', '> /dev/sda', 'chmod -R 777 /'];
 
-const PROTECTED_PATH_PREFIXES = process.platform === 'win32'
-    ? ['C:\\Windows', 'C:\\Program Files']
-    : ['/etc/', '/bin/', '/sbin/', '/usr/', '/boot/', '/sys/', '/proc/', '/var/lib/'];
+const PROTECTED_PATH_PREFIXES =
+    process.platform === 'win32'
+        ? ['C:\\Windows', 'C:\\Program Files']
+        : ['/etc/', '/bin/', '/sbin/', '/usr/', '/boot/', '/sys/', '/proc/', '/var/lib/'];
 
 /**
  * Run an operating system command and resolve with its output.
@@ -29,7 +23,12 @@ function defaultRunCommand(command, args, options = {}) {
             { timeout: options.timeout ?? 30_000, maxBuffer: 20 * 1024 * 1024, cwd: options.cwd },
             (error, stdout, stderr) => {
                 if (error && error.killed) {
-                    resolve({ code: null, stdout: stdout ?? '', stderr: `${stderr ?? ''}\nThe command timed out and was terminated.`, timedOut: true });
+                    resolve({
+                        code: null,
+                        stdout: stdout ?? '',
+                        stderr: `${stderr ?? ''}\nThe command timed out and was terminated.`,
+                        timedOut: true,
+                    });
 
                     return;
                 }
@@ -41,12 +40,12 @@ function defaultRunCommand(command, args, options = {}) {
                 }
 
                 resolve({
-                    code: error ? error.code ?? 1 : 0,
+                    code: error ? (error.code ?? 1) : 0,
                     stdout: stdout ?? '',
                     stderr: stderr ?? '',
                     timedOut: false,
                 });
-            },
+            }
         );
 
         child.on('error', (error) => reject(error));
@@ -62,8 +61,7 @@ function createLocalExecutor(options = {}) {
     const fileSystem = options.fileSystem ?? fs;
     const blockedPatterns = options.blockedPatterns ?? DEFAULT_BLOCKED_PATTERNS;
     const protectedPaths = options.protectedPaths ?? PROTECTED_PATH_PREFIXES;
-    const screenshotDirectory = options.screenshotDirectory
-        ?? path.join(os.tmpdir(), 'jarvis-screenshots');
+    const screenshotDirectory = options.screenshotDirectory ?? path.join(os.tmpdir(), 'jarvis-screenshots');
     const logger = options.logger ?? (() => {});
 
     function ok(payload) {
@@ -175,13 +173,20 @@ function createLocalExecutor(options = {}) {
         }
 
         if (platform === 'win32') {
-            return runCommand('powershell.exe', ['-NoProfile', '-Command',
-                'Add-Type -AssemblyName System.Windows.Forms,System.Drawing; '
-                + '$b=[System.Windows.Forms.SystemInformation]::VirtualScreen; '
-                + '$bmp=New-Object System.Drawing.Bitmap $b.Width,$b.Height; '
-                + '$g=[System.Drawing.Graphics]::FromImage($bmp); '
-                + '$g.CopyFromScreen($b.Left,$b.Top,0,0,$bmp.Size); '
-                + `$bmp.Save('${destination}',[System.Drawing.Imaging.ImageFormat]::Png)`], { timeout: 30_000 });
+            return runCommand(
+                'powershell.exe',
+                [
+                    '-NoProfile',
+                    '-Command',
+                    'Add-Type -AssemblyName System.Windows.Forms,System.Drawing; ' +
+                        '$b=[System.Windows.Forms.SystemInformation]::VirtualScreen; ' +
+                        '$bmp=New-Object System.Drawing.Bitmap $b.Width,$b.Height; ' +
+                        '$g=[System.Drawing.Graphics]::FromImage($bmp); ' +
+                        '$g.CopyFromScreen($b.Left,$b.Top,0,0,$bmp.Size); ' +
+                        `$bmp.Save('${destination}',[System.Drawing.Imaging.ImageFormat]::Png)`,
+                ],
+                { timeout: 30_000 }
+            );
         }
 
         return runCommand('scrot', ['-o', destination], { timeout: 30_000 });
@@ -193,9 +198,16 @@ function createLocalExecutor(options = {}) {
         }
 
         if (platform === 'win32') {
-            return runCommand('powershell.exe', ['-NoProfile', '-Command',
-                'Add-Type -AssemblyName System.Windows.Forms; '
-                + `[System.Windows.Forms.Cursor]::Position = New-Object System.Drawing.Point(${x},${y})`], {});
+            return runCommand(
+                'powershell.exe',
+                [
+                    '-NoProfile',
+                    '-Command',
+                    'Add-Type -AssemblyName System.Windows.Forms; ' +
+                        `[System.Windows.Forms.Cursor]::Position = New-Object System.Drawing.Point(${x},${y})`,
+                ],
+                {}
+            );
         }
 
         return runCommand('xdotool', ['mousemove', '--sync', String(x), String(y)], {});
@@ -205,23 +217,30 @@ function createLocalExecutor(options = {}) {
         const repeat = Math.max(1, clicks);
 
         if (platform === 'darwin') {
-            const prefix = button === 'right' ? 'rc:' : (repeat > 1 ? 'cc:' : 'c:');
+            const prefix = button === 'right' ? 'rc:' : repeat > 1 ? 'cc:' : 'c:';
 
             return runCommand('cliclick', [`${prefix}${x},${y}`], {});
         }
 
         if (platform === 'win32') {
-            const flag = button === 'right' ? '0x0008' : (button === 'middle' ? '0x0020' : '0x0002');
+            const flag = button === 'right' ? '0x0008' : button === 'middle' ? '0x0020' : '0x0002';
 
-            return runCommand('powershell.exe', ['-NoProfile', '-Command',
-                '$sig=\'[DllImport("user32.dll")] public static extern void mouse_event(uint f,uint dx,uint dy,int d,int e); '
-                + '[DllImport("user32.dll")] public static extern bool SetCursorPos(int x,int y);\'; '
-                + '$m=Add-Type -MemberDefinition $sig -Name JarvisMouse -Namespace Jarvis -PassThru; '
-                + `[Jarvis.JarvisMouse]::SetCursorPos(${x},${y}); `
-                + `1..${repeat} | ForEach-Object { $m::mouse_event(${flag},0,0,0,0) }`], {});
+            return runCommand(
+                'powershell.exe',
+                [
+                    '-NoProfile',
+                    '-Command',
+                    '$sig=\'[DllImport("user32.dll")] public static extern void mouse_event(uint f,uint dx,uint dy,int d,int e); ' +
+                        '[DllImport("user32.dll")] public static extern bool SetCursorPos(int x,int y);\'; ' +
+                        '$m=Add-Type -MemberDefinition $sig -Name JarvisMouse -Namespace Jarvis -PassThru; ' +
+                        `[Jarvis.JarvisMouse]::SetCursorPos(${x},${y}); ` +
+                        `1..${repeat} | ForEach-Object { $m::mouse_event(${flag},0,0,0,0) }`,
+                ],
+                {}
+            );
         }
 
-        const buttonNumber = button === 'right' ? '3' : (button === 'middle' ? '2' : '1');
+        const buttonNumber = button === 'right' ? '3' : button === 'middle' ? '2' : '1';
 
         await moveMouse(x, y);
 
@@ -236,9 +255,16 @@ function createLocalExecutor(options = {}) {
         }
 
         if (platform === 'win32') {
-            return runCommand('powershell.exe', ['-NoProfile', '-Command',
-                'Add-Type -AssemblyName System.Windows.Forms; '
-                + `[System.Windows.Forms.SendKeys]::SendWait('${text.replace(/['+^%~(){}[\]]/g, ' ')}')`], {});
+            return runCommand(
+                'powershell.exe',
+                [
+                    '-NoProfile',
+                    '-Command',
+                    'Add-Type -AssemblyName System.Windows.Forms; ' +
+                        `[System.Windows.Forms.SendKeys]::SendWait('${text.replace(/['+^%~(){}[\]]/g, ' ')}')`,
+                ],
+                {}
+            );
         }
 
         return runCommand('xdotool', ['type', '--delay', '12', '--', text], {});
@@ -248,15 +274,24 @@ function createLocalExecutor(options = {}) {
         if (platform === 'darwin') {
             const parts = key.toLowerCase().split('+').filter(Boolean);
             const keystroke = parts.pop() ?? '';
-            const modifiers = parts.map((part) => ({
-                cmd: 'command', command: 'command', super: 'command', meta: 'command',
-                ctrl: 'control', control: 'control',
-                alt: 'option', opt: 'option', option: 'option',
-                shift: 'shift',
-            }[part])).filter(Boolean);
-            const using = modifiers.length > 0
-                ? ` using {${modifiers.map((modifier) => `${modifier} down`).join(', ')}}`
-                : '';
+            const modifiers = parts
+                .map(
+                    (part) =>
+                        ({
+                            cmd: 'command',
+                            command: 'command',
+                            super: 'command',
+                            meta: 'command',
+                            ctrl: 'control',
+                            control: 'control',
+                            alt: 'option',
+                            opt: 'option',
+                            option: 'option',
+                            shift: 'shift',
+                        })[part]
+                )
+                .filter(Boolean);
+            const using = modifiers.length > 0 ? ` using {${modifiers.map((modifier) => `${modifier} down`).join(', ')}}` : '';
 
             return runCommand('osascript', ['-e', `tell application "System Events" to keystroke "${keystroke}"${using}`], {});
         }
@@ -264,14 +299,33 @@ function createLocalExecutor(options = {}) {
         if (platform === 'win32') {
             const parts = key.toLowerCase().split('+').filter(Boolean);
             const keystroke = parts.pop() ?? '';
-            const prefix = parts.map((part) => ({
-                ctrl: '^', control: '^', cmd: '^', command: '^', super: '^', meta: '^',
-                alt: '%', opt: '%', option: '%', shift: '+',
-            }[part] ?? '')).join('');
+            const prefix = parts
+                .map(
+                    (part) =>
+                        ({
+                            ctrl: '^',
+                            control: '^',
+                            cmd: '^',
+                            command: '^',
+                            super: '^',
+                            meta: '^',
+                            alt: '%',
+                            opt: '%',
+                            option: '%',
+                            shift: '+',
+                        })[part] ?? ''
+                )
+                .join('');
 
-            return runCommand('powershell.exe', ['-NoProfile', '-Command',
-                'Add-Type -AssemblyName System.Windows.Forms; '
-                + `[System.Windows.Forms.SendKeys]::SendWait('${prefix}${keystroke}')`], {});
+            return runCommand(
+                'powershell.exe',
+                [
+                    '-NoProfile',
+                    '-Command',
+                    'Add-Type -AssemblyName System.Windows.Forms; ' + `[System.Windows.Forms.SendKeys]::SendWait('${prefix}${keystroke}')`,
+                ],
+                {}
+            );
         }
 
         return runCommand('xdotool', ['key', '--', key.replace(/\bcmd\b|\bcommand\b/g, 'super')], {});

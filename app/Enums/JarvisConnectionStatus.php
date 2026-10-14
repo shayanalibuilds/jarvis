@@ -13,20 +13,6 @@ enum JarvisConnectionStatus: string
     case Revoked = 'revoked';
 
     /**
-     * Get a human readable label for the status.
-     */
-    public function label(): string
-    {
-        return match ($this) {
-            self::Pending => 'Waiting for authorization',
-            self::Active => 'Connected',
-            self::Failed => 'Failed',
-            self::Expired => 'Expired',
-            self::Revoked => 'Disconnected',
-        };
-    }
-
-    /**
      * Resolve a status from a Composio connected account status.
      */
     public static function fromComposio(?string $status): self
@@ -37,6 +23,20 @@ enum JarvisConnectionStatus: string
             'EXPIRED' => self::Expired,
             'REVOKED', 'INACTIVE' => self::Revoked,
             default => self::Pending,
+        };
+    }
+
+    /**
+     * Get a human readable label for the status.
+     */
+    public function label(): string
+    {
+        return match ($this) {
+            self::Pending => 'Waiting for authorization',
+            self::Active => 'Connected',
+            self::Failed => 'Failed',
+            self::Expired => 'Expired',
+            self::Revoked => 'Disconnected',
         };
     }
 

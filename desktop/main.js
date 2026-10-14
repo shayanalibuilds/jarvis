@@ -8,7 +8,8 @@ const path = require('node:path');
 const { createLocalExecutor } = require('./src/local-executor');
 const { DeviceAgent } = require('./src/device-agent');
 
-const TRAY_ICON = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAASElEQVR4nGNojPrPQAnGKvjGY+Z/bJigAbg04jMIq+bGqP9YMTZDMAzApRndEBQDiNWMzZBRA6hlAMXRSJWERHFSpkpmIgcDANF+eZ8+1+NFAAAAAElFTkSuQmCC';
+const TRAY_ICON =
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAASElEQVR4nGNojPrPQAnGKvjGY+Z/bJigAbg04jMIq+bGqP9YMTZDMAzApRndEBQDiNWMzZBRA6hlAMXRSJWERHFSpkpmIgcDANF+eZ8+1+NFAAAAAElFTkSuQmCC';
 
 const DEFAULT_CONFIG = {
     url: process.env.JARVIS_URL ?? 'http://localhost:8000',
@@ -35,7 +36,7 @@ function loadConfig() {
     try {
         const stored = JSON.parse(fs.readFileSync(configPath(), 'utf8'));
 
-        config = { ...DEFAULT_CONFIG, ...stored, shortcuts: { ...DEFAULT_CONFIG.shortcuts, ...(stored.shortcuts ?? {}) } };
+        config = { ...DEFAULT_CONFIG, ...stored, shortcuts: { ...DEFAULT_CONFIG.shortcuts, ...stored.shortcuts } };
     } catch {
         config = { ...DEFAULT_CONFIG };
     }
@@ -153,7 +154,7 @@ async function pairIfPossible() {
     }
 
     const csrfToken = await mainWindow?.webContents.executeJavaScript(
-        "document.querySelector('meta[name=\"csrf-token\"]')?.getAttribute('content') ?? null",
+        "document.querySelector('meta[name=\"csrf-token\"]')?.getAttribute('content') ?? null"
     );
 
     if (!csrfToken) {
@@ -230,21 +231,38 @@ function refreshTrayMenu() {
 
     tray.setToolTip(`Jarvis - ${label}`);
 
-    tray.setContextMenu(Menu.buildFromTemplate([
-        { label: `Jarvis: ${label}`, enabled: false },
-        { type: 'separator' },
-        { label: `Take over  (${config.shortcuts.takeOver})`, click: () => control('take_over').catch(() => {}) },
-        { label: `Pause / resume  (${config.shortcuts.pause})`, click: () => control('pause').catch(() => {}) },
-        { label: `Stop  (${config.shortcuts.stop})`, click: () => control('stop').catch(() => {}) },
-        { type: 'separator' },
-        { label: 'Open Jarvis', click: () => { mainWindow?.show(); mainWindow?.focus(); } },
-        { label: 'Quit Jarvis', click: () => { agent?.stop(); app.quit(); } },
-    ]));
+    tray.setContextMenu(
+        Menu.buildFromTemplate([
+            { label: `Jarvis: ${label}`, enabled: false },
+            { type: 'separator' },
+            { label: `Take over  (${config.shortcuts.takeOver})`, click: () => control('take_over').catch(() => {}) },
+            { label: `Pause / resume  (${config.shortcuts.pause})`, click: () => control('pause').catch(() => {}) },
+            { label: `Stop  (${config.shortcuts.stop})`, click: () => control('stop').catch(() => {}) },
+            { type: 'separator' },
+            {
+                label: 'Open Jarvis',
+                click: () => {
+                    mainWindow?.show();
+                    mainWindow?.focus();
+                },
+            },
+            {
+                label: 'Quit Jarvis',
+                click: () => {
+                    agent?.stop();
+                    app.quit();
+                },
+            },
+        ])
+    );
 }
 
 function createTray() {
     tray = new Tray(nativeImage.createFromDataURL(TRAY_ICON));
-    tray.on('click', () => { mainWindow?.show(); mainWindow?.focus(); });
+    tray.on('click', () => {
+        mainWindow?.show();
+        mainWindow?.focus();
+    });
     refreshTrayMenu();
 }
 

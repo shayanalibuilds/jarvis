@@ -35,7 +35,7 @@ final class WindowsComputerUseDriver extends AbstractProcessDriver
 
     public function move(int $x, int $y): void
     {
-        $this->mouseEvent("move", $x, $y, 0);
+        $this->mouseEvent('move', $x, $y, 0);
     }
 
     public function click(int $x, int $y, string $button = 'left', int $clicks = 1): void
@@ -46,7 +46,7 @@ final class WindowsComputerUseDriver extends AbstractProcessDriver
             default => '0x0002',
         };
 
-        $this->mouseEvent("click", $x, $y, $flag, max(1, $clicks));
+        $this->mouseEvent('click', $x, $y, $flag, max(1, $clicks));
     }
 
     public function type(string $text): void
@@ -73,6 +73,16 @@ final class WindowsComputerUseDriver extends AbstractProcessDriver
         ], 'pressKey');
     }
 
+    public function scroll(int $amount): void
+    {
+        $this->mouseEvent('scroll', 0, 0, $amount >= 0 ? '0x00000800' : '0x00000800', 1, $amount * 120);
+    }
+
+    public function openApplication(string $application): void
+    {
+        $this->run(['powershell', '-NoProfile', '-Command', "Start-Process '{$application}'"], 'openApplication');
+    }
+
     /**
      * Translate a key combination such as "ctrl+shift+s" into SendKeys syntax.
      */
@@ -93,16 +103,6 @@ final class WindowsComputerUseDriver extends AbstractProcessDriver
         }
 
         return $prefix.$keystroke;
-    }
-
-    public function scroll(int $amount): void
-    {
-        $this->mouseEvent('scroll', 0, 0, $amount >= 0 ? '0x00000800' : '0x00000800', 1, $amount * 120);
-    }
-
-    public function openApplication(string $application): void
-    {
-        $this->run(['powershell', '-NoProfile', '-Command', "Start-Process '{$application}'"], 'openApplication');
     }
 
     /**

@@ -154,9 +154,7 @@ class DeviceAgent {
                 this.onEvent({ type: 'error', error: error.message });
             }
 
-            await sleep(this.session && this.session.allows_execution === false
-                ? this.pausedPollIntervalMs
-                : this.pollIntervalMs);
+            await sleep(this.session && this.session.allows_execution === false ? this.pausedPollIntervalMs : this.pollIntervalMs);
         }
     }
 
