@@ -2,12 +2,22 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Jarvis\DevicePairingController;
+use App\Http\Controllers\Jarvis\JarvisConnectionCallbackController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes
 Route::livewire('/', 'pages::dashboard')
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
+
+// Jarvis routes
+Route::middleware(['auth', 'verified'])->group(function (): void {
+    Route::livewire('/jarvis', 'pages::jarvis')->name('jarvis.index');
+    Route::livewire('/jarvis/connections', 'pages::connections.index')->name('jarvis.connections');
+    Route::get('/jarvis/connections/callback', JarvisConnectionCallbackController::class)->name('jarvis.connections.callback');
+    Route::post('/jarvis/devices', [DevicePairingController::class, 'store'])->name('jarvis.devices.store');
+});
 
 // Auth routes
 Route::middleware('guest')->group(function () {

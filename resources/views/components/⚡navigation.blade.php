@@ -22,6 +22,8 @@ new class extends Component {
 
         <flux:navbar class="max-lg:hidden">
             <flux:navbar.item icon="home" href="/" wire:navigate>Home</flux:navbar.item>
+            <flux:navbar.item icon="sparkles" href="{{ route('jarvis.index') }}" wire:navigate>Jarvis</flux:navbar.item>
+            <flux:navbar.item icon="link" href="{{ route('jarvis.connections') }}" wire:navigate>Connections</flux:navbar.item>
         </flux:navbar>
 
         <flux:spacer />
@@ -47,6 +49,8 @@ new class extends Component {
 
         <flux:sidebar.nav>
             <flux:sidebar.item icon="home" href="/" wire:navigate>Home</flux:sidebar.item>
+            <flux:sidebar.item icon="sparkles" href="{{ route('jarvis.index') }}" wire:navigate>Jarvis</flux:sidebar.item>
+            <flux:sidebar.item icon="link" href="{{ route('jarvis.connections') }}" wire:navigate>Connections</flux:sidebar.item>
         </flux:sidebar.nav>
     </flux:sidebar>
 
